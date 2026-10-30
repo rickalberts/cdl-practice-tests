@@ -1,0 +1,836 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}</style>
+<title>CLP Practice Tests</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: one narrow column like a driver's log. A sticky status bar carries the three exams and the
+   progress count; each question is its own ruled card with a Not confident toggle beside the question number.
+   Visual world: interstate signage, condensed DIN-style capitals, shield blue, caution amber for the flag. */
+:root {
+  --bg: #F2F5F9;
+  --surface: #FFFFFF;
+  --ink: #13202D;
+  --muted: #546374;
+  --line: #D3DBE5;
+  --soft: #E7ECF3;
+  --sel: #EAF1FB;
+  --accent: #1F4E8C;
+  --accent-ink: #FFFFFF;
+  --flag: #F2B01E;
+  --flag-ink: #2E2100;
+  --flag-soft: #FFF1C9;
+  --flag-text: #6B4B00;
+  --ok: #156B40;
+  --ok-soft: #DDF2E6;
+  --bad: #B3261E;
+  --bad-soft: #FBE3E0;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1620;
+    --surface: #16212E;
+    --ink: #E7EDF4;
+    --muted: #9AA9BA;
+    --line: #2A3A4C;
+    --soft: #1D2B3B;
+    --sel: #1B2D45;
+    --accent: #7AABEB;
+    --accent-ink: #0A1626;
+    --flag: #F2B01E;
+    --flag-ink: #2E2100;
+    --flag-soft: #3A2E10;
+    --flag-text: #F5C75B;
+    --ok: #5CC38C;
+    --ok-soft: #153325;
+    --bad: #F0837B;
+    --bad-soft: #3B1B19;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1620;
+  --surface: #16212E;
+  --ink: #E7EDF4;
+  --muted: #9AA9BA;
+  --line: #2A3A4C;
+  --soft: #1D2B3B;
+  --sel: #1B2D45;
+  --accent: #7AABEB;
+  --accent-ink: #0A1626;
+  --flag: #F2B01E;
+  --flag-ink: #2E2100;
+  --flag-soft: #3A2E10;
+  --flag-text: #F5C75B;
+  --ok: #5CC38C;
+  --ok-soft: #153325;
+  --bad: #F0837B;
+  --bad-soft: #3B1B19;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.5 var(--font-body);
+  padding-block: 0 56px;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  z-index: 10;
+}
+.in {
+  width: 100%;
+  max-width: 792px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; }
+button:focus-visible, .opt:has(input:focus-visible), .unsure:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Header */
+.head { padding-block: 28px 18px; display: grid; gap: 8px; }
+.eyebrow {
+  margin: 0;
+  font: 600 14px var(--font-display);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+h1 {
+  margin: 0;
+  font: 700 clamp(36px, 9vw, 56px)/.95 var(--font-display);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.lede { margin: 4px 0 0; max-width: 60ch; color: var(--muted); }
+
+/* Sticky status bar */
+.bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 5;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.bar .in { padding-block: 10px 0; display: grid; gap: 8px; }
+.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.tab {
+  display: grid;
+  gap: 0;
+  text-align: left;
+  padding: 7px 10px 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 0;
+}
+.tab .tn {
+  font: 600 17px/1.15 var(--font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.tab .tc { font: 500 13px/1.3 var(--font-body); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tab[aria-selected="true"] .tc { color: var(--accent-ink); opacity: .9; }
+.prog { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; min-height: 38px; }
+.count { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 0; }
+.meter { height: 4px; background: var(--soft); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))) calc(-1 * max(16px, env(safe-area-inset-right, 0px))); }
+.meter i { display: block; height: 100%; width: 0; background: var(--accent); }
+
+/* Buttons */
+.btn {
+  font: 600 16px/1 var(--font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 12px 18px;
+  min-height: 44px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.sm { min-height: 36px; padding: 9px 14px; font-size: 15px; }
+.btn[hidden] { display: none; }
+
+/* Test heading */
+#listTop { scroll-margin-top: 150px; }
+.thead { padding-block: 22px 14px; display: grid; gap: 2px; }
+.thead h2 {
+  margin: 0;
+  font: 700 28px/1.05 var(--font-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.thead p { margin: 0; color: var(--muted); max-width: 65ch; }
+
+/* Questions */
+#list { display: grid; gap: 14px; }
+.q {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 14px 16px;
+  display: grid;
+  gap: 12px;
+}
+.qhead { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.qn {
+  font: 600 15px var(--font-display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.grp { border: 0; margin: 0; padding: 0; min-width: 0; }
+.prompt { padding: 0; margin: 0 0 10px; width: 100%; font-size: 18px; font-weight: 600; line-height: 1.35; max-width: 65ch; text-wrap: pretty; }
+.opts { display: grid; gap: 8px; }
+.opt {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.opt .ltr {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  font: 600 15px var(--font-display);
+  color: var(--muted);
+}
+.opt .txt { min-width: 0; overflow-wrap: anywhere; padding-top: 1px; flex: 1; }
+.opt .mark {
+  flex: none;
+  align-self: center;
+  font: 600 13px var(--font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.opt.sel { border-color: var(--accent); background: var(--sel); }
+.opt.sel .ltr { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.opt.right .ltr { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.opt.right .mark { color: var(--ok); }
+.opt.wrongpick { border-color: var(--bad); background: var(--bad-soft); }
+.opt.wrongpick .ltr { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.opt.wrongpick .mark { color: var(--bad); }
+.locked .opt, .locked .unsure { cursor: default; }
+
+/* Not confident toggle */
+.unsure {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 9px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: 600 15px var(--font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+}
+.unsure input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.unsure { position: relative; }
+.unsure .dot {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+}
+.unsure.on { background: var(--flag); border-color: var(--flag); color: var(--flag-ink); }
+.unsure.on .dot { border-color: var(--flag-ink); }
+.unsure.on .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--flag-ink); }
+
+/* Explanation after checking */
+.why { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 6px; }
+.why p { margin: 0; max-width: 65ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font: 600 14px/1.5 var(--font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.flag { background: var(--flag-soft); color: var(--flag-text); }
+.answerline { font-weight: 600; }
+
+/* Results */
+.results { display: grid; gap: 16px; padding-block: 4px 10px; }
+.score { display: flex; align-items: flex-end; gap: 6px 18px; flex-wrap: wrap; }
+.big { font: 700 64px/.9 var(--font-display); font-variant-numeric: tabular-nums; }
+.big .of { font-size: 34px; color: var(--muted); }
+.scoretxt { display: grid; gap: 2px; padding-bottom: 4px; }
+.scoretxt strong { font: 700 30px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.verdict { font-weight: 600; }
+.verdict.pass { color: var(--ok); }
+.verdict.fail { color: var(--bad); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.tlab { display: flex; align-items: center; gap: 8px; font: 600 16px var(--font-display); letter-spacing: .08em; text-transform: uppercase; }
+.pt { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.pt.ok { background: var(--ok); }
+.pt.flag { background: var(--flag); }
+.pt.bad { background: var(--bad); }
+.pt.gap { background: transparent; border: 2px solid var(--bad); }
+.tnum { font: 700 36px/1.05 var(--font-display); font-variant-numeric: tabular-nums; }
+.tdesc { font-size: 14px; color: var(--muted); }
+.rnote { margin: 0; color: var(--muted); max-width: 65ch; }
+.rbtns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button {
+  background: var(--surface);
+  border: 0;
+  padding: 10px 14px;
+  min-height: 44px;
+  font: 600 15px var(--font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: var(--soft); border-radius: 6px; }
+.banner p { margin: 0; min-width: 0; flex: 1 1 240px; }
+.empty { color: var(--muted); padding-block: 12px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 6px; }
+.foot { color: var(--muted); font-size: 14px; max-width: 65ch; padding-top: 22px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .opt, .unsure, .tab, .btn { transition: background-color .12s, border-color .12s, color .12s; }
+  .meter i { transition: width .2s; }
+}
+@media (max-width: 420px) {
+  .tab { padding-inline: 8px; }
+  .tab .tn { font-size: 16px; letter-spacing: .04em; }
+  .big { font-size: 56px; }
+}
+</style>
+
+</head><body>
+<header class="in head">
+  <p class="eyebrow">Florida commercial learner's permit</p>
+  <h1>CLP Practice Tests</h1>
+  <p class="lede">Pick an answer for each question. Switch on Not confident whenever you guessed or felt unsure. When you check your answers, your misses and lucky guesses are sorted so you know what to study first.</p>
+</header>
+
+<div class="bar">
+  <div class="in">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Practice tests"></div>
+    <div class="prog">
+      <span class="count" id="count"></span>
+      <button class="btn sm" type="button" data-act="check" id="barCheck">Check answers</button>
+    </div>
+  </div>
+  <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
+</div>
+
+<main class="in">
+  <div id="listTop"></div>
+  <div class="thead"><h2 id="tTitle"></h2><p id="tSub"></p></div>
+  <div id="list"></div>
+  <p class="foot" id="foot">Progress saves as you go.</p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Each question: [prompt, options, index of correct option, explanation] */
+  var TESTS = [
+    {
+      id: "general", name: "General Knowledge", short: "General",
+      blurb: "Pre-trip inspection, braking, hazards, cargo, alcohol and fatigue, and emergencies.",
+      qs: [
+        ["How should your eyes work while you scan the road ahead?", ["Fixed straight ahead at all times", "Mostly toward the left lane", "Mostly toward the shoulder", "Moving between far and near, and back to the mirrors"], 3, "Keep your eyes moving. Look far ahead (12 to 15 seconds) and near, and check your mirrors regularly."],
+        ["On a 20-inch steering wheel, free play beyond about how much can make the vehicle hard to steer?", ["None at all is allowed", "5 inches", "10 degrees (about 2 inches)", "20 degrees"], 2, "More than about 10 degrees of play (about 2 inches on a 20-inch wheel) can make steering difficult."],
+        ["Why should you plan your response as soon as you spot a hazard?", ["So you can act smoothly before it becomes an emergency", "So you can ignore it", "So you can speed up", "So you can use your phone"], 0, "Early planning gives you time to slow, steer, or change lanes smoothly instead of braking hard or swerving."],
+        ["About how long does a typical tractor-trailer need to clear a double set of railroad tracks?", ["About 5 seconds", "More than 15 seconds", "Exactly 10 seconds", "Under 8 seconds"], 1, "A typical tractor-trailer needs at least 14 seconds to clear a single track and more than 15 seconds for double tracks. Never start across unless you can clear."],
+        ["What separates road rage from aggressive driving?", ["The time of day", "The type of vehicle", "The speed limit", "Road rage involves intent to harm or assault"], 3, "Aggressive driving is unsafe driving behavior, while road rage includes an intent to physically harm or an actual assault."],
+        ["If you begin to hydroplane, what should you do?", ["Ease off the accelerator and push in the clutch; avoid hard braking", "Slam the brakes", "Speed up", "Let go of the wheel"], 0, "Slowing gently lets the tires regain contact with the road. Avoid hard braking and sharp steering."],
+        ["Which two things tell you when to shift gears?", ["Wind speed and traffic", "Fuel level and time", "Engine speed (RPM) and road speed", "Tire pressure and temperature"], 2, "Use engine RPM and road speed to know when to upshift or downshift."],
+        ["What is the minimum tread depth for front (steering) tires?", ["2/32 inch", "4/32 inch", "1/32 inch", "1/2 inch"], 1, "Steering tires need at least 4/32 inch in every major groove. Other tires need at least 2/32 inch."],
+        ["What does an anti-lock braking system do?", ["Always shortens stopping distance", "Adds braking power", "Replaces the need to steer", "Helps keep the wheels from locking so you can keep steering"], 3, "ABS prevents wheel lockup so you keep steering control. It doesn't necessarily shorten stopping distance."],
+        ["Which helps you stay alert on a long drive?", ["Taking short breaks before you get drowsy", "Driving during your normal sleep hours", "Relying on coffee", "Keeping the cab very warm"], 0, "Stop for breaks before you feel sleepy. Caffeine and heat don't fix fatigue."],
+        ["When is it appropriate to use your horn?", ["Whenever someone is in your way", "When you want to change lanes", "When it may help you avoid a crash by warning others", "Whenever you pass a vehicle"], 2, "Use the horn only when it can help prevent a crash. It can startle other drivers."],
+        ["What should you look for when you inspect wheel bearing seals?", ["Fresh paint", "Signs of leaking", "Tire brand", "Dirt on the rim"], 1, "Leaking seals can let lubricant escape and cause a bearing failure or a hot wheel."],
+        ["When should you use your four-way emergency flashers?", ["When you are stopped on the road or shoulder in an emergency or breakdown", "Whenever it rains", "While crossing railroad tracks", "Whenever you are on the highway"], 0, "Turn on the four-way flashers any time you are stopped on the road or shoulder for an emergency or breakdown, before you set out warning devices."],
+        ["How do you check hydraulic brakes for a leak?", ["Listen for hissing", "Rev the engine", "Look under the vehicle", "Pump the pedal three times, then hold firm pressure for 5 seconds; it should not move"], 3, "Pump three times, apply firm pressure for five seconds, and the pedal should not move. If it does, there may be a leak."],
+        ["What is the best way to deal with an aggressive driver?", ["Gesture back", "Brake hard in front of them", "Stay calm, avoid eye contact, and call police if you can safely", "Race them"], 2, "Don't engage. Stay calm, avoid eye contact, give them room, and report them to police if you can do so safely."],
+        ["On a divided highway, where do you place warning devices when you must stop?", ["All within 10 feet of the vehicle", "At 10 feet, 100 feet, and 200 feet toward approaching traffic", "500 feet behind", "Only at the front"], 1, "On a divided or one-way road, place them at 10, 100, and 200 feet toward approaching traffic."],
+        ["How can you measure your following distance in seconds?", ["Pick a fixed landmark; when the vehicle ahead passes it, count the seconds until you reach it", "Estimate by eye", "Check the speedometer", "Ask a passenger"], 0, "Count the seconds between the lead vehicle and you passing the same fixed point."],
+        ["Why keep your ignition key with you during a pre-trip inspection?", ["To save weight", "To keep it clean", "Because the engine is off", "So no one else can start or move the vehicle while you are inspecting it"], 3, "Keep the key with you so no one can start or move the vehicle while you are under or near it."],
+        ["How should you brake in an emergency with an ABS-equipped vehicle?", ["Pump the pedal", "Brake lightly", "Press firmly and hold, and steer if needed", "Use only the parking brake"], 2, "Press the pedal firmly and keep it down. ABS will prevent lockup so you can steer."],
+        ["Why inspect the vehicle in the same order every time?", ["The law requires one exact order", "You're less likely to miss something", "It saves fuel", "It makes the truck cleaner"], 1, "A consistent routine helps you remember every item. The law requires the inspection, not a specific sequence."],
+        ["What is the most important reason for a pre-trip inspection?", ["Safety", "Cleanliness", "Fuel economy", "Appearance"], 0, "The inspection finds problems that could cause a crash or breakdown."],
+        ["How do you start from a stop on a hill without rolling back (manual transmission)?", ["Release the clutch quickly", "Rev the engine only", "Put the vehicle in neutral", "Partly engage the clutch before releasing the brake"], 3, "Ease the clutch to the friction point before you take your foot off the brake, and use the parking brake if needed."],
+        ["What three distances make up total stopping distance?", ["Speed, weight, and braking", "Reaction, traction, and braking", "Perception, reaction, and braking", "Perception, weight, and traction"], 2, "Total stopping distance equals perception distance plus reaction distance plus braking distance."],
+        ["You are given a sealed load to haul. What should you check before leaving?", ["Nothing, sealed loads have no paperwork", "That the seal number matches the shipping papers and the seal is intact", "Break the seal to look inside", "Remove the seal at the first stop"], 1, "Confirm the seal is intact and the number matches the paperwork. Never break the seal unless required."],
+        ["Which of these is NOT the driver's responsibility regarding cargo?", ["Keeping the cargo fresh", "Inspecting it", "Making sure it's secure", "Recognizing overloads"], 0, "Drivers inspect cargo, secure it, and recognize overloads. Keeping cargo fresh is not part of that list."],
+        ["As blood alcohol rises, what happens?", ["Only coordination is affected", "Only judgment is affected", "Nothing, until 0.20", "Judgment, self-control, coordination, and the brain are all increasingly affected"], 3, "Alcohol first reduces judgment and self-control, then coordination and muscle control as BAC climbs."],
+        ["Is it safe to remove the radiator cap if the engine isn't overheating?", ["Yes, if there's no steam", "Yes, if the hood is open", "No, not when the system is hot or under pressure", "Yes, always"], 2, "Never remove the cap when the system is hot. Pressurized coolant can scald you."],
+        ["Why limit use of the horn?", ["It wears out the bulb", "It can startle others, and on air-brake vehicles it uses air you may need", "It is illegal", "It drains the radio"], 1, "Horns can startle other drivers, and an air horn uses compressed air."],
+        ["What can wet brakes do?", ["Apply unevenly, weakly, or grab", "Fall off", "Rust immediately", "Lock up permanently"], 0, "Water can make brakes pull to one side, grab, or work weakly. Test and dry them after driving through water."],
+        ["What is the minimum number of tiedowns for cargo 5 feet or less in length and 1,100 pounds or less?", ["None", "Two", "Three", "One"], 3, "Small, light cargo needs at least one tiedown. Heavier or longer cargo needs two or more."],
+        ["What are two key things to watch for ahead as you drive?", ["Gas stations", "Rest areas", "Other vehicles and traffic signs/signals", "Billboards"], 2, "Constantly scan for traffic and for signs, signals, and road conditions."],
+        ["What can happen if you swing left before turning right?", ["Nothing", "Another driver may try to pass you on the right", "Your tires will wear less", "The turn will be easier"], 1, "Swinging left opens a gap that other drivers may try to fill on your right. Keep your rear close to the curb."],
+        ["What is true about over-width, over-length, or over-weight loads?", ["They require a special permit", "They need no paperwork", "They may only travel at night", "They always need a police escort"], 0, "Oversize or overweight loads generally need a special permit. Escorts or time limits depend on the permit."],
+        ["Which technique helps prevent rollback when starting uphill?", ["Release the clutch quickly", "Rev the engine first", "Put the transmission in neutral", "Use the parking brake until the clutch begins to engage"], 3, "Hold with the parking brake while you ease the clutch, and release the brake once the engine has enough pull."],
+        ["Why is the pre-trip inspection worth doing every time?", ["To check the paint", "Because other drivers do", "It protects you and others by finding problems before they cause a crash", "To guard against theft"], 2, "Its purpose is safety for you and everyone else on the road."],
+        ["Which parts belong to the steering system?", ["Leaf spring, frame, torque rod", "Tie rod, spindle, pitman arm", "Rim, lug nuts, tire", "Axle, shackle, main spring"], 1, "Steering linkage includes the pitman arm, drag link, tie rod, and spindle."],
+        ["Which are suspension defects?", ["Cracked spring hangers, leaking shocks, and broken leaf springs", "Low windshield fluid", "Dirty mirrors", "A burned-out dome light"], 0, "Cracked hangers, leaking shock absorbers, and broken or shifted springs are all suspension problems."],
+        ["What is a vehicle inspection report?", ["An invoice for repairs", "The owner's maintenance schedule", "A receipt for service", "A written report by the driver on the vehicle's condition and needed repairs"], 3, "Drivers write up defects they find so they can be fixed, and the next driver can review the repairs."],
+        ["What emergency equipment must you carry?", ["First aid kit and flares only", "Flares and a blanket", "Fire extinguisher, spare fuses, and warning devices", "Tow rope and jack"], 2, "Required items include a charged fire extinguisher, spare electrical fuses (if the vehicle uses them), and warning devices for stopped vehicles."],
+        ["What is the best way to see the sides and rear of your vehicle while driving?", ["Roll down the window and lean out", "Your mirrors", "Turn around", "Ask a passenger"], 1, "Adjust and check your mirrors regularly. Cameras can help but don't replace mirrors."],
+        ["What are two common causes of tire fires?", ["Underinflated tires and duals that touch", "New tires and cold weather", "Overinflated tires and wide tread", "Clean wheels and tight lug nuts"], 0, "Low pressure and touching duals build heat. Check them and tires regularly."],
+        ["What is the purpose of a hazmat placard?", ["Advertising", "Fuel tracking", "Identifying the carrier", "Communicating the hazard to others, including emergency responders"], 3, "Placards warn people about the kind of hazard the vehicle carries."],
+        ["In safe driving, what does communicating mean?", ["Talking on the phone", "Using only hand signals", "Letting others know you're there and what you're doing with signals, flashers, horn, and lights", "Waving at drivers"], 2, "Use signals, brake lights, flashers, and the horn to tell others your position and intentions."],
+        ["How can you reduce the effects of wet brakes?", ["Stop completely", "Maintain light brake pressure while driving out of the water to heat and dry them", "Pump hard", "Do nothing"], 1, "Light pressure through the water keeps debris out, and light pressure afterward warms and dries the linings."],
+        ["What determines a safe speed going down a long, steep grade?", ["Vehicle and cargo weight, length and steepness of the grade, road and weather conditions", "Only the speed limit", "Only cargo weight", "The time of day"], 0, "Choose a speed based on weight, grade length and steepness, and conditions. Never exceed it."],
+        ["Why select the right gear before starting down a hill?", ["The clutch works only on flat ground", "To match the gear at the bottom", "It does not matter", "It may be too late to shift once you're going downhill"], 3, "Shifting under load on a grade can fail, leaving you without engine braking."],
+        ["Which three things are drivers responsible for regarding cargo?", ["Loading, weighing, and delivering", "Selling, loading, and storing", "Inspecting it, recognizing overloads, and making sure it is secure", "Insuring, counting, and weighing"], 2, "A driver must inspect cargo, recognize overloads, and ensure it is properly secured."],
+        ["When backing a trailer, what is a pull-up?", ["A DOT exam exercise", "Pulling forward to straighten the rig, then backing again", "Towing another truck", "A shoulder stop"], 1, "If the trailer isn't lining up, pull forward to realign the rig, then continue backing."],
+        ["What should you check wheel bearing seals for?", ["Leaks", "Smoke", "Gasoline", "Color changes only"], 0, "Look for oil or grease leaking from the seals."],
+        ["What is an escape ramp?", ["Another name for an exit ramp", "A ramp used only in California", "A ramp for pedestrians", "A ramp with loose material that slows a runaway vehicle"], 3, "Escape ramps use deep, loose material (and often an upgrade) to stop a vehicle with failed brakes."]
+      ]
+    },
+    {
+      id: "combination", name: "Combination Vehicles", short: "Combination",
+      blurb: "Air lines, coupling and uncoupling, trailer skids, rollover, and off-tracking.",
+      qs: [
+        ["How should you use the trailer hand valve when parking?", ["Use it every time you stop", "Use it only on hills", "Never use it for parking", "Use it only at loading docks"], 2, "Air can leak and release the brakes. Park with the parking (spring) brakes, and use chocks if the trailer has none."],
+        ["A fully loaded combination is about how many times more likely to roll over in a crash than an empty one?", ["10 times", "3 times", "5 times", "20 times"], 0, "A loaded rig has a higher center of gravity and is roughly ten times more likely to roll over."],
+        ["Which setup has the greatest chance of a crack-the-whip rollover?", ["A straight truck", "A tractor with one short trailer", "A tractor with two trailers", "A tractor pulling three trailers"], 3, "More trailers mean more rearward amplification. Triples have the greatest whip effect."],
+        ["After the fifth wheel locks onto the kingpin, how should you test the connection?", ["Back up about 10 feet", "Pull the tractor gently forward against the locked trailer brakes", "Drive 50 feet and turn both ways", "Jerk the tractor forward hard"], 1, "With the trailer brakes applied, gently pull ahead. If the trailer holds, the coupling is secure."],
+        ["What is another name for the shut-off valves on the trailer air lines?", ["Relay valves", "Protection valves", "Cut-out cocks", "Emergency valves"], 2, "Shut-off valves are also called cut-out cocks."],
+        ["What is the first step in handling a trailer skid?", ["Recognize it early by watching your mirrors", "Stomp the brakes repeatedly", "Apply the trailer hand valve", "Steer sharply the opposite way"], 0, "Early recognition lets you react before the trailer swings out. Mirrors are the best early warning."],
+        ["Why shouldn't you use the trailer hand valve to slow the rig while driving?", ["It doesn't work at highway speed", "It breaks the glad hands", "It drains the tractor air tanks", "It can cause the trailer to skid"], 3, "Applying only the trailer brakes can lock the trailer wheels and cause a skid."],
+        ["What is the minimum following distance for a combination vehicle?", ["One second for every 20 feet of length", "One second per 10 feet of vehicle length, plus one second over 40 mph", "Two seconds for every 10 feet", "A flat 3 seconds"], 1, "Allow at least one second for each 10 feet of vehicle length, and add one more second above 40 mph."],
+        ["A trailer jackknife is most likely when...", ["The cargo is too light", "The tractor is empty", "The trailer wheels lock and skid", "The landing gear is raised"], 2, "Locked trailer wheels let the trailer swing around and push the tractor sideways."],
+        ["What is the emergency air line?", ["It supplies air to the trailer tanks and controls the emergency brakes", "It applies the brakes when you press the pedal", "It connects tanks to the lights", "It exhausts air from the tractor"], 0, "The emergency (supply) line fills the trailer tanks, and loss of pressure applies the emergency brakes."],
+        ["What is the quickest way to know your trailer has started to skid?", ["A change in the engine sound", "A vibration in the pedal", "The ABS light", "Seeing it in your mirrors"], 3, "Check mirrors often. A swinging trailer shows up there before you feel it."],
+        ["If your trailer starts to skid, what should you do?", ["Brake harder", "Release the brakes until the wheels grip, then steer", "Apply the hand valve only", "Accelerate"], 1, "Ease off the brakes so the wheels regain traction, then steer smoothly."],
+        ["Which combination is harder to control while stopping?", ["An empty combination (brakes are designed for a load)", "A loaded combination", "A straight truck", "They all stop the same"], 0, "Empty trailers have less weight on the wheels, so brakes can lock or work poorly."],
+        ["Why connect unused glad hands to dummy couplers?", ["To raise air pressure", "To tell the lines apart", "To keep dirt and water out of the lines", "To save air"], 2, "Dummy couplers keep contaminants out so the air system stays clean."],
+        ["What can happen if the tractor protection valve fails?", ["Nothing", "The trailer raises", "The glad hands lock", "A leak or breakaway could drain all the system air"], 3, "Without a working valve, a break in the trailer line can drain the tractor's air too."],
+        ["On older trailers, what happens if the service and emergency lines are crossed?", ["Nothing, they are interchangeable", "You could drive off without trailer brakes", "The tank fills faster", "The lights fail"], 1, "Crossed lines can leave the trailer brakes not working while the rig still moves."],
+        ["What causes the crack-the-whip effect?", ["Rearward amplification of sudden steering", "Slow speeds", "Wet brakes", "Low tire pressure"], 0, "A quick steering move is magnified at the rear of the combination."],
+        ["Before backing under a trailer, what should be true of the air system?", ["It should be empty", "It should be cleaned", "It should be at normal pressure", "It should be half-charged"], 2, "Supply air to the trailer and build normal pressure before backing under."],
+        ["How do you prevent the crack-the-whip effect?", ["Change lanes quickly", "Speed up in turns", "Follow closely", "Steer gently and smoothly"], 3, "Smooth steering keeps the rear trailer from whipping."],
+        ["What is the best way to prevent a rollover?", ["Load cargo high", "Keep cargo low and centered, and slow down for turns", "Load one side heavier", "Take curves at posted speed always"], 1, "A low, centered load and reduced speed in curves lower the rollover risk."],
+        ["What is off-tracking?", ["The trailer swinging side to side", "Driving off the road", "The rear wheels following a different path than the front wheels", "Losing steering"], 2, "In turns the rear wheels cut inside the front wheels' path."],
+        ["The service line carries air to which trailer component to control brake pressure?", ["Relay valves", "The hand valve", "Glad hands only", "The tractor protection valve"], 0, "Service line air goes to the trailer's relay valves, which send tank air to the brakes."],
+        ["What does the tractor protection valve do?", ["Prevents skids", "Raises the trailer", "Cools the brakes", "Keeps air in the tractor if the trailer leaks or breaks away"], 3, "It closes to protect the tractor's air supply."],
+        ["At about what pressure does the tractor protection valve close automatically?", ["Over 100 psi", "Low pressure, roughly 20 to 45 psi", "It never closes automatically", "Exactly 90 psi"], 1, "It closes when pressure drops into the range of about 20 to 45 psi."],
+        ["What two air lines does every combination vehicle have?", ["Hose and tank lines", "Tractor and trailer lines", "Service line and emergency line", "Brake and fuel lines"], 2, "Every combination has a service (control) line and an emergency (supply) line."],
+        ["What is the service line for?", ["Carrying air controlled by the foot brake or trailer hand valve to apply the trailer brakes", "Supplying the tanks", "Powering the lights", "Releasing the tires"], 0, "The service line carries brake-application air."],
+        ["What other names does the service line have?", ["Supply line", "Emergency line", "Return line", "Control line and signal line"], 3, "It is also called the control or signal line."],
+        ["What are glad hands?", ["Lighting connectors", "Couplers that connect the tractor's service and emergency lines to the trailer", "Hand brakes", "Tire valves"], 1, "Glad hands connect the air lines between tractor and trailer."],
+        ["What is the emergency line also called?", ["The supply line", "The signal line", "The control line", "The service line"], 0, "The emergency line is the supply line."],
+        ["What is the trailer hand valve used for?", ["Parking", "Slowing the rig", "Testing the trailer brakes", "Releasing the fifth wheel"], 2, "Use it to test the trailer brakes, not for parking or normal slowing."],
+        ["How often should you drain the air tanks (without automatic drains)?", ["Monthly", "Weekly", "Every other day", "Every day"], 3, "Drain water and oil daily to prevent freezing and brake problems."],
+        ["What is the first step when coupling a tractor to a semi-trailer?", ["Back under the trailer", "Inspect the fifth wheel", "Connect the air lines", "Raise the landing gear"], 1, "Start by inspecting the fifth wheel for damage, a clean, greased plate, and an open latch."],
+        ["What should you do if the parking brakes won't release?", ["Check the air line connections", "Drive anyway", "Swap the glad hands", "Disconnect the trailer"], 0, "Make sure the lines are connected correctly and the system has air before driving."],
+        ["What are the trailer air tanks for?", ["Cooling the brakes", "Inflating tires", "Supplying air pressure to the trailer brakes", "Filtering oil"], 2, "They hold the air that applies the trailer brakes."],
+        ["What should you do when parking a trailer with no spring brakes?", ["Use the hand valve", "Disconnect the lines", "Park on a hill", "Use wheel chocks"], 3, "Without spring brakes the trailer can roll when air leaks, so chock the wheels."],
+        ["Which shut-off valves should be closed?", ["All of them", "Only those at the rear of the last trailer", "Only those on the first trailer", "None"], 1, "Close the rear valves on the last trailer. All others stay open."],
+        ["What describes landing gear in good condition?", ["Partly lowered", "Bent but working", "Fully raised, undamaged, and the crank handle secured", "Greased only"], 2, "It should be fully raised, not bent or missing parts, with the handle secured."],
+        ["What is the second step when coupling?", ["Inspect the area and chock the wheels", "Supply air to the trailer", "Raise the landing gear", "Lock the brakes"], 0, "After the fifth wheel inspection, check the area and chock the trailer wheels."],
+        ["What can happen if the trailer is too high when you back under it?", ["Nothing", "Brakes lock", "The air lines swap", "The tractor may strike and damage the trailer's nose"], 3, "The trailer should be at the right height so the fifth wheel slides under without damage."],
+        ["What is the third step when coupling?", ["Connect the air lines", "Position the tractor in front of the trailer", "Lock the trailer brakes", "Raise the landing gear"], 1, "With the area secured, line up the tractor squarely in front of the trailer."]
+      ]
+    },
+    {
+      id: "airbrakes", name: "Air Brakes", short: "Air Brakes",
+      blurb: "Spring brakes, dual systems, tank draining, leak tests, and downgrade braking.",
+      qs: [
+        ["How do you test that the spring brakes come on automatically?", ["Drive and brake hard", "With the wheels chocked, fan the brake pedal to reduce air pressure until the parking brake control pops out", "Drain the tanks completely", "Shut the engine off and wait an hour"], 1, "Chock the wheels, release the parking brakes, and fan the pedal. The parking brake valve should pop out at the manufacturer's specified pressure, typically in the range of about 20 to 40 psi."],
+        ["Which can cause brakes to fade or fail?", ["Using too much engine braking", "Driving in a high gear only", "Cold weather alone", "Overusing the service brakes, not using engine braking enough, and poor adjustment"], 3, "Overuse of service brakes, too little engine braking, and out-of-adjustment brakes all lead to overheating, brake fade, or failure."],
+        ["How often should you drain the air tanks if they lack automatic drains?", ["At the end of each day of driving", "Monthly", "Quarterly", "Only after a long trip"], 0, "Drain them daily to remove water and oil."],
+        ["What should you do before leaving a vehicle unattended?", ["Leave it running", "Leave the parking brake off", "Set the parking brake, chock the wheels if needed, and take the key", "Leave the lights on"], 2, "Secure the vehicle so it can't roll or be taken: parking brake set, wheels chocked if needed, key removed."],
+        ["How do you check slack adjusters on manual-adjuster brakes?", ["Accelerate, then brake hard", "Listen for noise while braking", "Look at them from the cab", "With the brakes released and wheels chocked, pull hard on each adjuster you can reach"], 3, "Pull firmly by hand on the slack adjuster. If it moves more than about an inch at the push rod, it needs adjusting."],
+        ["What happens to your normal braking if ABS fails?", ["You lose all brakes", "You still have normal brakes without the anti-lock function", "The vehicle will not move", "The spring brakes apply"], 1, "Your regular brakes still work. You just lose the anti-lock help, so get it repaired soon."],
+        ["What are slack adjusters?", ["Parts that link the push rod to the brake camshaft and let you adjust the brakes", "Air tank valves", "Tire pressure sensors", "Steering links"], 0, "On drum brakes the slack adjuster connects the push rod to the S-cam, and adjusting it sets brake clearance."],
+        ["On a long, steep downgrade, what role do the service brakes play?", ["They do all the work", "They are unnecessary", "They supplement the braking effect of the engine", "They are used only in an emergency"], 2, "Engine braking does the primary work. The service brakes only add to it."],
+        ["What are spring brakes?", ["Brakes that use coil springs on the wheels in place of air", "Brakes used only on trailers", "Brakes operated by the foot pedal only", "Powerful springs held back by air pressure that apply automatically when air pressure drops too low"], 3, "Air holds the springs compressed. If pressure falls, the springs apply the brakes. They also work as the parking brake."],
+        ["How can you dry out wet brakes?", ["Drain the tanks", "Apply the brakes lightly while driving in a low gear", "Park and wait", "Brake hard from high speed"], 1, "Light pressure creates friction heat that dries the linings. Do it in a low gear at a safe speed."],
+        ["What should you never do while the spring brakes are applied?", ["Check the air gauge", "Start the engine", "Push the brake pedal down", "Release the clutch"], 2, "Pressing the brake pedal while the spring brakes are applied combines both forces and can damage the brake system."],
+        ["What is a dual air brake system?", ["Two separate air systems using a single set of brake controls", "Two sets of controls", "Two compressors sharing tanks", "One system for the tractor and one for emergencies only"], 0, "Most heavy vehicles have two independent air systems operated by one set of controls, so you keep some braking if one fails."],
+        ["Before driving a vehicle with a dual air system, what pressure should both systems reach?", ["40 psi", "60 psi in one only", "80 psi", "At least 100 psi in both"], 3, "Let the compressor build at least 100 psi in both the primary and secondary systems before driving."],
+        ["Which is true of a dual air brake system?", ["It uses two sets of pedals", "It has a primary and a secondary system, with one set of controls", "Both systems always run the same axle", "Only one system has tanks"], 1, "The primary and secondary systems usually serve different axles, and both are controlled by the same pedal."],
+        ["What is the proper way to slow a large vehicle on a long downgrade?", ["Hold the brakes down firmly the whole way", "Coast in neutral", "Use a low gear, and apply the brakes just hard enough to feel a definite slowdown, releasing when about 5 mph below safe speed", "Brake only at the bottom"], 2, "Let the engine do most of the work, and use intermittent brake applications."],
+        ["What is it called when you press the brakes hard, release when they lock, then press again once the wheels roll?", ["Stab braking", "Controlled braking", "Snub braking", "Anti-lock braking"], 0, "That's stab braking. Controlled braking is holding firm pressure just short of lockup."],
+        ["In a dual air brake system, which brakes does each system typically operate?", ["One system does the front axle and trailer only", "One does the trailer only", "One does all axles, the other just the trailer", "One operates the rear axle(s), the other the front axle (and sometimes a rear axle); both supply air to the trailer"], 3, "One system serves the rear axles and the other serves the front axle, and both supply air to the trailer."],
+        ["Why is there an added delay in stopping with air brakes?", ["The compressor measures pressure", "The tires slow down", "Air takes time to flow through the lines to the brakes", "The springs reset"], 2, "With air brakes you add brake lag (about half a second) for the air to reach the brakes."],
+        ["Where is compressed air stored?", ["In the compressor", "In the air storage tanks (reservoirs)", "In the gauges", "In the service lines"], 1, "Air storage tanks hold the compressed air used to apply the brakes."],
+        ["In the air leakage rate test, what do you do after the engine is off and the system is fully charged?", ["Time the pressure drop, with the brakes released and then applied", "Wait 30 minutes", "Rev the engine", "Drain the tanks"], 0, "Check the gauge for pressure loss per minute. Typical limits are 2 psi (single vehicle) or 3 psi (combination) with brakes released."],
+        ["What is brake fade?", ["Brakes that are too cold", "Brakes that need paint", "A sound from the pedal", "Loss of braking power from overheating, as drums expand away from the linings"], 3, "Excess heat reduces friction and pushes the drums out, so the brakes work poorly."],
+        ["Why must you drain the air tanks?", ["To lighten the truck", "Water in the tanks can freeze and cause brake failure", "To save fuel", "To cool the compressor"], 1, "Water and oil collect in the tanks, and frozen water can block the system."],
+        ["Why is brake adjustment especially important before a steep downgrade?", ["It saves fuel", "It doesn't matter", "Poorly adjusted brakes make some brakes do more work and overheat while others do less", "It resets the compressor"], 2, "Uneven brakes overheat on a long grade, which leads to fade."],
+        ["When should you NOT use the parking brakes?", ["When the brakes are very hot or very wet in freezing weather", "On level ground", "When it is raining", "Never; always use them"], 0, "Hot brakes can be damaged, and wet brakes can freeze to the drums. Use chocks instead."],
+        ["If you can't use the parking brakes, what should you do?", ["Leave it in neutral", "Use the emergency brake", "Leave the engine running", "Use wheel chocks"], 3, "Chock the wheels so the vehicle can't roll."],
+        ["Which device lets you remove oil and water from the air system?", ["Safety valve", "Air tank drain valve", "Treadle valve", "Governor"], 1, "Each air tank has a drain valve (or an automatic drain) for removing moisture."],
+        ["What does it mean if the safety valve opens and releases air?", ["The system is fully charged", "The brakes are working", "Pressure is too high (about 150 psi) and something is wrong, so a mechanic should check it", "The tanks are empty"], 2, "The safety valve protects the tanks from too much pressure, usually opening around 150 psi. If it opens, get the system checked."],
+        ["What happens if you rapidly press and release the brake pedal many times?", ["You can let air out faster than the compressor can replace it", "You stop faster", "You cool the brakes", "You lose steering"], 0, "Fanning or pumping the pedal drains the air supply and can leave you without brakes."],
+        ["Which device helps reduce the risk of ice in the air brake system in cold weather?", ["Governor", "Tank drain", "Safety valve", "Alcohol evaporator"], 3, "An alcohol evaporator puts alcohol into the system to lower the freezing point of any moisture."],
+        ["What is a modulating control valve?", ["A valve that controls the compressor", "A hand control that lets you apply the spring brakes gradually", "A tank drain", "A pressure relief valve"], 1, "On some vehicles, such as buses, a hand lever applies the spring brakes in proportion to how far you move it."]
+      ]
+    }
+  ];
+
+  var KEY = "clp-practice-v1-";
+  var LET = "ABCD";
+  var PASS = 80;
+  var RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  var T = {}, S = {};
+  TESTS.forEach(function (t) { T[t.id] = t; S[t.id] = blank(); });
+
+  var cur = "general";
+  var view = "all";
+  var confirmCheck = false;
+  var confirmReset = false;
+  var touched = {}, timers = {}, inflight = {}, dirty = {};
+  var dbRef = null, uid = null;
+
+  function blank() { return { answers: {}, flags: {}, checked: false, focus: null }; }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  /* ---------- scoring ---------- */
+  function stats(id) {
+    var t = T[id], s = S[id];
+    var r = { total: t.qs.length, answered: 0, flagged: 0, correct: 0, solid: 0, lucky: 0, blind: 0, gap: 0, pct: 0 };
+    t.qs.forEach(function (q, i) {
+      var a = s.answers[i], f = !!s.flags[i];
+      if (a !== undefined) r.answered++;
+      if (f) r.flagged++;
+      if (a === q[2]) { r.correct++; if (f) r.lucky++; else r.solid++; }
+      else if (f) r.gap++;
+      else r.blind++;
+    });
+    r.pct = Math.round(100 * r.correct / r.total);
+    return r;
+  }
+  function needs(id) {
+    var t = T[id], s = S[id], out = [];
+    t.qs.forEach(function (q, i) { if (s.answers[i] !== q[2] || s.flags[i]) out.push(i); });
+    return out;
+  }
+  function scopeIdx(id) {
+    var s = S[id];
+    return s.focus ? s.focus : T[id].qs.map(function (_, i) { return i; });
+  }
+
+  /* ---------- saving ---------- */
+  function ser(id) {
+    var s = S[id];
+    return { answers: s.answers, flags: s.flags, checked: s.checked, focus: s.focus, updated: Date.now() };
+  }
+  function adopt(id, o) {
+    if (!o || typeof o !== "object") return;
+    var s = S[id];
+    s.answers = o.answers || {};
+    s.flags = o.flags || {};
+    s.checked = !!o.checked;
+    s.focus = Array.isArray(o.focus) ? o.focus : null;
+  }
+  function lsSave(id) { try { localStorage.setItem(KEY + id, JSON.stringify(ser(id))); } catch (e) {} }
+  function touch(id) {
+    touched[id] = true;
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(function () { timers[id] = null; flush(id); }, 450);
+  }
+  function flush(id) {
+    lsSave(id);
+    if (!dbRef || !uid) return Promise.resolve();
+    if (inflight[id]) { dirty[id] = true; return Promise.resolve(); }
+    inflight[id] = true;
+    return dbRef.doc("data/users/" + uid + "/" + id).set(ser(id)).catch(function () {
+      syncNote(false);
+    }).then(function () {
+      inflight[id] = false;
+      if (dirty[id]) { dirty[id] = false; flush(id); }
+    });
+  }
+  function syncNote(online) {
+    $("foot").textContent = online
+      ? "Progress saves to your account as you go, so you can pick this up on any device."
+      : "Progress saves in this browser only.";
+  }
+
+  /* ---------- rendering ---------- */
+  function renderTabs() {
+    $("tabs").innerHTML = TESTS.map(function (t) {
+      return '<button class="tab" type="button" role="tab" data-tab="' + t.id + '" aria-selected="false">' +
+        '<span class="tn">' + esc(t.short) + '</span><span class="tc"></span></button>';
+    }).join("");
+  }
+  function updateBar() {
+    var s = S[cur], st = stats(cur);
+    TESTS.forEach(function (t) {
+      var b = document.querySelector('[data-tab="' + t.id + '"]');
+      var c = stats(t.id);
+      b.setAttribute("aria-selected", t.id === cur ? "true" : "false");
+      b.querySelector(".tc").textContent = S[t.id].checked ? "Score " + c.correct + "/" + c.total : c.answered + "/" + c.total;
+    });
+    $("meterFill").style.width = (100 * st.answered / st.total) + "%";
+    $("count").textContent = s.checked
+      ? "Score " + st.correct + " of " + st.total + " (" + st.pct + "%)"
+      : st.answered + " of " + st.total + " answered · " + st.flagged + " not confident";
+    var unans = scopeIdx(cur).filter(function (i) { return s.answers[i] === undefined; }).length;
+    document.querySelectorAll('[data-act="check"]').forEach(function (b) {
+      b.hidden = s.checked;
+      b.textContent = confirmCheck ? "Check anyway (" + unans + " blank)" : "Check answers";
+    });
+    document.querySelectorAll('[data-act="reset"]').forEach(function (b) {
+      b.textContent = confirmReset ? "Confirm reset" : "Reset this test";
+    });
+  }
+  function qHTML(i) {
+    var t = T[cur], s = S[cur], q = t.qs[i], a = s.answers[i], f = !!s.flags[i], done = s.checked;
+    var opts = q[1].map(function (o, k) {
+      var cls = "opt";
+      if (a === k) cls += " sel";
+      if (done && k === q[2]) cls += " right";
+      else if (done && a === k) cls += " wrongpick";
+      var mark = "";
+      if (done && k === q[2]) mark = '<span class="mark">Correct</span>';
+      else if (done && a === k) mark = '<span class="mark">Your answer</span>';
+      return '<label class="' + cls + '"><input type="radio" id="r' + cur + '-' + i + '-' + k + '" name="r' + i + '" value="' + k + '"' +
+        (a === k ? " checked" : "") + (done ? " disabled" : "") + '>' +
+        '<span class="ltr">' + LET[k] + '</span><span class="txt">' + esc(o) + '</span>' + mark + '</label>';
+    }).join("");
+    var why = "";
+    if (done) {
+      var ok = a === q[2];
+      var chip = ok ? '<span class="chip ok">Correct</span>'
+        : a === undefined ? '<span class="chip bad">Skipped</span>' : '<span class="chip bad">Incorrect</span>';
+      if (f) chip += '<span class="chip flag">Not confident</span>';
+      why = '<div class="why"><div class="chips">' + chip + '</div>' +
+        (ok ? "" : '<p class="answerline">Correct answer: ' + LET[q[2]] + ". " + esc(q[1][q[2]]) + "</p>") +
+        "<p>" + esc(q[3]) + "</p></div>";
+    }
+    return '<article class="q' + (done ? " locked" : "") + '">' +
+      '<div class="qhead"><span class="qn">Question ' + (i + 1) + " of " + t.qs.length + "</span>" +
+      '<label class="unsure' + (f ? " on" : "") + '"><input type="checkbox" id="f' + cur + "-" + i + '" data-flag="' + i + '"' +
+      (f ? " checked" : "") + (done ? " disabled" : "") + '><span class="dot"></span><span>Not confident</span></label></div>' +
+      '<fieldset class="grp"><legend class="prompt">' + esc(q[0]) + '</legend><div class="opts">' + opts + "</div></fieldset>" +
+      why + "</article>";
+  }
+  function tile(cls, label, n, desc) {
+    return '<div class="tile"><span class="tlab"><i class="pt ' + cls + '"></i>' + label + '</span><span class="tnum">' + n +
+      '</span><span class="tdesc">' + desc + "</span></div>";
+  }
+  function resultsHTML() {
+    var s = S[cur], st = stats(cur), n = needs(cur).length, pass = st.pct >= PASS;
+    var btns = "";
+    if (n > 0) {
+      btns += '<button class="btn" type="button" data-act="retake">Retake ' + n + " weak spot" + (n === 1 ? "" : "s") + "</button>";
+      btns += '<div class="seg" role="group" aria-label="Show questions">' +
+        '<button type="button" data-act="view" data-view="all" class="' + (view === "all" ? "on" : "") + '">All</button>' +
+        '<button type="button" data-act="view" data-view="review" class="' + (view === "review" ? "on" : "") + '">Needs review (' + n + ")</button></div>";
+    }
+    if (s.focus) btns += '<button class="btn ghost" type="button" data-act="showall">Show all questions</button>';
+    return '<section class="results" aria-label="Results">' +
+      '<div class="score"><div class="big">' + st.correct + '<span class="of">/' + st.total + '</span></div>' +
+      '<div class="scoretxt"><strong>' + st.pct + '%</strong><span class="verdict ' + (pass ? "pass" : "fail") + '">' +
+      (pass ? "At or above the " + PASS + "% pass mark" : "Below the " + PASS + "% pass mark") + "</span></div></div>" +
+      '<div class="tiles">' +
+      tile("ok", "Solid", st.solid, "Right and confident") +
+      tile("flag", "Lucky guesses", st.lucky, "Right, but not confident") +
+      tile("bad", "Blind spots", st.blind, "Wrong, but felt sure") +
+      tile("gap", "Known gaps", st.gap, "Wrong and not confident") + "</div>" +
+      '<p class="rnote">' + (n > 0
+        ? "Blind spots matter most, because you were sure and still missed them. Lucky guesses count toward your score, but treat them as unfinished."
+        : "Every answer was right and confident. Retake the test later to make sure it holds.") + "</p>" +
+      (btns ? '<div class="rbtns">' + btns + "</div>" : "") + "</section>";
+  }
+  function renderList() {
+    var t = T[cur], s = S[cur], h = "";
+    if (s.checked) h += resultsHTML();
+    else if (s.focus) {
+      h += '<div class="banner"><p>Weak-spot round: ' + s.focus.length + " question" + (s.focus.length === 1 ? "" : "s") +
+        ". Your earlier answers on the other questions are kept.</p>" +
+        '<button class="btn ghost sm" type="button" data-act="showall">Show all questions</button></div>';
+    }
+    var idx = scopeIdx(cur).filter(function (i) {
+      if (s.checked && view === "review") return s.answers[i] !== t.qs[i][2] || s.flags[i];
+      return true;
+    });
+    h += idx.length ? idx.map(qHTML).join("") : '<p class="empty">Nothing to show here.</p>';
+    h += '<div class="actions">' +
+      (s.checked ? "" : '<button class="btn" type="button" data-act="check">Check answers</button>') +
+      '<button class="btn ghost" type="button" data-act="reset">Reset this test</button></div>';
+    $("list").innerHTML = h;
+  }
+  function render() {
+    var t = T[cur];
+    $("tTitle").textContent = t.name;
+    $("tSub").textContent = t.qs.length + " questions. " + t.blurb;
+    renderList();
+    updateBar();
+  }
+  function toTop() {
+    $("listTop").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+  }
+  function switchTab(id) {
+    if (!T[id] || id === cur) return;
+    cur = id; view = "all"; confirmCheck = false; confirmReset = false;
+    render();
+  }
+
+  /* ---------- actions ---------- */
+  function doCheck() {
+    var s = S[cur];
+    var unans = scopeIdx(cur).filter(function (i) { return s.answers[i] === undefined; }).length;
+    if (unans > 0 && !confirmCheck) { confirmCheck = true; updateBar(); return; }
+    s.checked = true; confirmCheck = false; view = "all";
+    touch(cur); render(); toTop();
+  }
+  function doRetake() {
+    var s = S[cur], ids = needs(cur);
+    ids.forEach(function (i) { delete s.answers[i]; delete s.flags[i]; });
+    s.focus = ids; s.checked = false; view = "all"; confirmCheck = false;
+    touch(cur); render(); toTop();
+  }
+  function doReset() {
+    if (!confirmReset) { confirmReset = true; updateBar(); return; }
+    S[cur] = blank(); confirmReset = false; confirmCheck = false; view = "all";
+    touch(cur); render(); toTop();
+  }
+
+  document.addEventListener("click", function (e) {
+    var tab = e.target.closest("[data-tab]");
+    if (tab) {
+      switchTab(tab.getAttribute("data-tab"));
+      try { location.hash = cur; } catch (err) {}
+      toTop();
+      return;
+    }
+    var b = e.target.closest("[data-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-act");
+    if (act !== "reset" && confirmReset) { confirmReset = false; updateBar(); }
+    if (act === "check") doCheck();
+    else if (act === "reset") doReset();
+    else if (act === "retake") doRetake();
+    else if (act === "showall") { S[cur].focus = null; touch(cur); render(); toTop(); }
+    else if (act === "view") { view = b.getAttribute("data-view"); renderList(); }
+  });
+
+  $("list").addEventListener("change", function (e) {
+    var el = e.target, s = S[cur];
+    if (el.type === "radio") {
+      var i = +el.name.slice(1);
+      s.answers[i] = +el.value;
+      var opts = el.closest(".opts").querySelectorAll(".opt");
+      for (var k = 0; k < opts.length; k++) opts[k].classList.toggle("sel", opts[k].contains(el));
+    } else if (el.hasAttribute("data-flag")) {
+      var n = el.getAttribute("data-flag");
+      if (el.checked) s.flags[n] = 1; else delete s.flags[n];
+      el.closest(".unsure").classList.toggle("on", el.checked);
+    } else return;
+    confirmCheck = false;
+    touch(cur);
+    updateBar();
+  });
+
+  window.addEventListener("hashchange", function () {
+    var h = location.hash.slice(1);
+    if (T[h]) switchTab(h);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState !== "hidden") return;
+    TESTS.forEach(function (t) {
+      if (timers[t.id]) { clearTimeout(timers[t.id]); timers[t.id] = null; flush(t.id); }
+    });
+  });
+
+  /* ---------- start ---------- */
+  function hasProgress(id) {
+    var s = S[id];
+    return Object.keys(s.answers).length > 0 || Object.keys(s.flags).length > 0 || s.checked;
+  }
+  function init() {
+    TESTS.forEach(function (t) {
+      try {
+        var raw = localStorage.getItem(KEY + t.id);
+        if (raw) adopt(t.id, JSON.parse(raw));
+      } catch (e) {}
+    });
+    var h = location.hash.slice(1);
+    if (T[h]) cur = h;
+    renderTabs();
+    render();
+    syncNote(false);
+
+    var c = window.claude;
+    if (!c || !c.use) return;
+    Promise.all([c.use("db"), c.use("user")]).then(function (r) {
+      var db = r[0], user = r[1];
+      if (!db || !user) return null;
+      return user.id().then(function (id) { return id ? { db: db, id: id } : null; });
+    }).then(function (ctx) {
+      if (!ctx) return;
+      dbRef = ctx.db; uid = ctx.id;
+      return TESTS.reduce(function (p, t) {
+        return p.then(function () {
+          return dbRef.doc("data/users/" + uid + "/" + t.id).get().then(function (snap) {
+            if (touched[t.id]) return;
+            if (snap.exists) {
+              adopt(t.id, snap.data());
+              if (t.id === cur) render(); else updateBar();
+            } else if (hasProgress(t.id)) {
+              flush(t.id);
+            }
+          });
+        });
+      }, Promise.resolve()).then(function () { syncNote(true); });
+    }).catch(function () { syncNote(false); });
+  }
+  init();
+})();
+</script>
+
+</body></html>
